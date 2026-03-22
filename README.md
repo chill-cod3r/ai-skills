@@ -22,6 +22,16 @@ The repo root may also contain a generated compatibility copy like `ship.md` for
 
 ## Skills
 
+### anti-slop
+
+Writing-style guardrail skill for newsletters and posts that strips AI-sounding phrasing, cliché transitions, and corporate buzzwords in favor of concrete, direct, human-sounding writing.
+
+- Canonical source: [anti-slop/base.md](anti-slop/base.md)
+- Claude wrapper: [anti-slop/claude.md](anti-slop/claude.md)
+- Codex wrapper: [anti-slop/codex/SKILL.md](anti-slop/codex/SKILL.md)
+- Copilot wrapper: [anti-slop/copilot/AGENTS.md](anti-slop/copilot/AGENTS.md)
+- Compatibility copy: [anti-slop.md](anti-slop.md)
+
 ### ship
 
 End-to-end workflow for planning, PRD generation, implementation, verification, and explicit user acceptance with audit-grade evidence.
