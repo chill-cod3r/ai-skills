@@ -118,6 +118,19 @@ Remaining ambiguities to resolve during implementation.
 - **Small enough to implement in one focused session.** If a story is too large, decompose it into substories before coding.
 - **Acceptance criteria must be verifiable.** "Works correctly" is bad. "Button shows confirmation dialog before deleting" is good.
 - **Evidence requirements are proportional to the story type.** See the Evidence Tiers section below.
+- **Every persisted field needs semantic meaning, not just a type.** Call out whether a field is `date-only`, `timestamp`, `url`, `tag-list`, `enum`, `free-text`, and so on.
+- **User-visible copy is part of the contract when named in the story.** If the PRD says `"Get Directions"`, changing it is a deviation until the PRD is updated.
+- **CRUD stories need field-level proof.** Do not accept a CRUD story on a single happy path if several fields were never created, displayed, edited, or reloaded.
+- **Separate behavior from proof.** The story should make it clear what the system must do versus what evidence is required to prove it.
+
+### Global Data Semantics
+
+Unless the story explicitly overrides these rules:
+
+- `date-only` values are stored as `YYYY-MM-DD` strings.
+- `timestamp` values are stored as ISO 8601 UTC strings from `new Date().toISOString()`.
+- `url` values must render as real links when displayed.
+- `tag-list` values can use a storage-friendly representation, but tests and browser automation must exercise the real UI interaction at least once.
 
 ---
 
@@ -141,6 +154,7 @@ Do not start story N+1 until story N is fully accepted, unless the user explicit
 
 - **Material deviations** (different library, changed data model, dropped feature): Stop and get explicit user approval. Update the PRD to reflect the approved change.
 - **Minor implementation deviations** (different file name, slightly different API shape): Document in `progress.md` and surface when presenting evidence. No need to block on approval.
+- **Unapproved deviations block acceptance.** A story is not done if `progress.md` and the PRD disagree on the contract.
 
 ---
 
@@ -217,7 +231,7 @@ Prefer `agent-browser` as the default browser automation tool. If `agent-browser
 **agent-browser setup notes:**
 - Install as a dev dependency: `npm install -D agent-browser && npx agent-browser install`
 - If Playwright's bundled browser isn't available, use system Chrome: `export AGENT_BROWSER_EXECUTABLE_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"`
-- Kill stale daemons: `pkill -f "agent-browser"` before switching executable paths
+- Close stale sessions with `agent-browser close --session <name>` and prefer targeted cleanup over process-wide kills
 - `agent-browser` has no `batch` subcommand — use shell scripts
 
 **Automation scripts** are executable shell scripts at `tasks/automation/{work-id}.sh`. They should:
@@ -225,6 +239,20 @@ Prefer `agent-browser` as the default browser automation tool. If `agent-browser
 - Check for a running dev server or start one
 - Save all artifacts to `artifacts/{work-id}/`
 - Exit non-zero on verification failure
+- Use realistic interaction paths for the behavior being tested
+- Avoid direct DOM mutation for the feature under test unless that mutation is explicitly documented as setup-only
+- Clean up persisted state they create, or prove they are safe to run from a dirty state
+
+### Evidence Matrix
+
+For CRUD stories, present evidence in a compact field matrix. At minimum, map each important field to:
+
+- create/input evidence
+- display evidence
+- edit/update evidence if editable
+- persistence/reload evidence if locally persisted
+
+If a field is intentionally not covered, state that explicitly rather than implying full coverage.
 
 ### Console / Error Log Verification
 
