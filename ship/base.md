@@ -1,10 +1,8 @@
 ---
-name: "ship"
+name: ship
 description: "End-to-end skill for planning, building, and shipping features with audit-grade evidence. Covers: architecture planning, PRD generation with vertical-slice user stories, incremental implementation, proportional verification, and explicit acceptance gating. Use when starting a new project, planning a feature, or resuming implementation of an existing PRD."
 user-invocable: true
 ---
-
-<!-- Generated from ship/base.md. Do not edit directly. -->
 
 # /ship — Plan, Build, Verify, Accept
 
