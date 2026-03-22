@@ -1,0 +1,334 @@
+---
+name: ship
+description: "End-to-end skill for planning, building, and shipping features with audit-grade evidence. Covers: architecture planning, PRD generation with vertical-slice user stories, incremental implementation, proportional verification, and explicit acceptance gating. Use when starting a new project, planning a feature, or resuming implementation of an existing PRD."
+user-invocable: true
+---
+
+# /ship — Plan, Build, Verify, Accept
+
+An end-to-end skill for shipping software incrementally with audit-grade evidence at every step.
+
+---
+
+## Overview
+
+`/ship` covers the full lifecycle:
+
+1. **Plan** — Research, ask clarifying questions, produce an architecture doc
+2. **PRD** — Generate a phased, task-based Product Requirements Document with vertical-slice user stories
+3. **Build** — Implement one story at a time in dependency order
+4. **Verify** — Collect proportional evidence that the story works
+5. **Accept** — Present evidence to the user and wait for explicit acceptance before moving on
+
+Each phase feeds the next. The skill is explicitly invoked, not auto-triggered.
+
+---
+
+## Phase 1: Plan
+
+### When to Plan
+
+- **Greenfield projects:** Always plan. Produce an architecture PRD at `PRD.md` in the repo root.
+- **New features in existing repos:** Plan only if the feature spans multiple files or introduces new patterns. Skip straight to Phase 2 (PRD) if the scope is clear.
+
+### How to Plan
+
+1. Research the relevant technologies. Read docs. Understand constraints.
+2. If the user's prompt leaves material ambiguity (e.g., unclear scope, multiple valid architectures, missing success criteria), ask up to 5 clarifying questions with lettered options so the user can respond quickly ("1A, 2C, 3B"). If the prompt is already specific enough, skip questions and draft the plan directly.
+3. Produce a plan covering: tech stack, data model, architecture, project structure, implementation phases.
+4. Write the plan and present it for user approval before implementing.
+5. Save the approved plan to `PRD.md` in the repo root (greenfield only).
+
+### Plan Quality Bar
+
+- Decisions are justified, not just listed.
+- Trade-offs are surfaced, not hidden.
+- Links to relevant documentation are included.
+- Unresolved questions are called out explicitly.
+
+---
+
+## Phase 2: PRD
+
+### Generate the PRD
+
+1. If the scope, goals, or boundaries are ambiguous, ask clarifying questions (up to 5, lettered options). If the user has already been specific enough, skip questions and draft directly.
+2. Generate a structured PRD using the format below.
+3. Save to `tasks/prd-{feature-name}.md` (kebab-case).
+
+**Important:** Do NOT start implementing. Just create the PRD.
+
+### PRD Format
+
+```markdown
+# PRD: {Feature Name}
+
+## Introduction
+Brief description of the feature and the problem it solves.
+
+## Goals
+Specific, measurable objectives (bullet list).
+
+## Build Order
+Dependency graph showing story execution order. Each story builds on the last.
+Do not skip ahead.
+
+## User Stories
+
+### US-001: {Title}
+**Description:** As a {user}, I want {feature} so that {benefit}.
+
+**Acceptance Criteria:**
+- [ ] Specific, verifiable criterion
+- [ ] Another criterion
+
+**Manual Verification:**
+- [ ] Step-by-step instructions a human can follow
+
+**Automated Tests:**
+- [ ] Test descriptions tied to the story's logic
+
+---
+
+## Functional Requirements
+Numbered list: "FR-1: The system must..."
+
+## Non-Goals (Out of Scope)
+What this feature will NOT include.
+
+## Design Considerations
+UI/UX requirements, components to reuse, layout notes.
+
+## Technical Considerations
+Constraints, dependencies, performance requirements.
+
+## Success Metrics
+How success is measured.
+
+## Open Questions
+Remaining ambiguities to resolve during implementation.
+```
+
+### Story Design Principles
+
+- **Vertical slices by default.** Each story delivers data + logic + UI + persistence, testable end-to-end. Do not split into horizontal layers (all backend, then all frontend) unless the user explicitly requests it.
+- **Ordered dependency chain.** Stories are sequenced so each builds on the last. The build order section makes this explicit.
+- **Small enough to implement in one focused session.** If a story is too large, decompose it into substories before coding.
+- **Acceptance criteria must be verifiable.** "Works correctly" is bad. "Button shows confirmation dialog before deleting" is good.
+- **Evidence requirements are proportional to the story type.** See the Evidence Tiers section below.
+
+---
+
+## Phase 3: Build
+
+### Workflow
+
+1. **Read the story** from the PRD before starting. Every time.
+2. **Implement the story.** Write code, tests, and any necessary configuration.
+3. **Verify the story.** Collect evidence proportional to the story type (see Evidence Tiers).
+4. **Present evidence** to the user in a structured format.
+5. **Wait for explicit acceptance.** Do NOT start the next story until the user says "accepted" or equivalent.
+6. **If feedback is given:** fix the issues, re-collect evidence, and re-present.
+7. **Update `progress.md`** after acceptance with: what changed, evidence collected, learnings, deviations.
+
+### Sequential Execution
+
+Do not start story N+1 until story N is fully accepted, unless the user explicitly approves parallel work.
+
+### Handling Deviations
+
+- **Material deviations** (different library, changed data model, dropped feature): Stop and get explicit user approval. Update the PRD to reflect the approved change.
+- **Minor implementation deviations** (different file name, slightly different API shape): Document in `progress.md` and surface when presenting evidence. No need to block on approval.
+
+---
+
+## Phase 4: Verify
+
+### Evidence Tiers
+
+Evidence is proportional to the story type. Not every story needs browser automation.
+
+#### Tier 1: Infrastructure / Config / Scaffold
+
+Stories that set up tooling, config, CI, or cloud resources with minimal or no UI.
+
+**Required evidence:**
+- [ ] Raw command output from all build/test/lint commands
+- [ ] CLI verification using the relevant tool (e.g., cloud provider CLI, curl, docker, terraform)
+- [ ] Server logs or process output showing successful startup
+
+**Examples:**
+- Scaffold story: `npm run dev`, `npm run build`, `npm run test`, `npm run lint` — raw output saved
+- Cloud infra story: `aws s3 ls`, `gcloud run services describe`, `terraform plan` output
+- API endpoint story: `curl -v` request/response showing correct status codes and payloads
+- Database migration story: CLI query showing table exists with expected columns
+- CI pipeline story: link to passing pipeline run or raw log output
+
+**Browser automation:** Only if the story produces visible UI output (e.g., a scaffold that renders a hello world page).
+
+#### Tier 2: UI / Frontend Stories
+
+Stories that create or modify user-facing pages, components, or interactions.
+
+**Required evidence:**
+- [ ] Automated tests (unit/integration) for the logic introduced
+- [ ] Browser automation script at `tasks/automation/{work-id}.sh`
+- [ ] Artifacts saved to `artifacts/{work-id}/`:
+  - `screenshot.png` — full-page screenshot after key action
+  - `snapshot.txt` — accessibility tree snapshot
+  - `console.txt` — browser console logs (check for errors)
+  - `errors.txt` — page errors (should be empty)
+- [ ] Raw command output from test/lint/build
+- [ ] Manual verification steps documented and performed
+
+**Examples:**
+- CRUD page: screenshot showing list with data, form filled out, detail view
+- Form validation: screenshot showing error states, console clean
+- Responsive layout: screenshots at mobile and desktop widths
+- Modal/dialog: screenshot of open state, accessibility snapshot showing correct ARIA
+
+#### Tier 3: Logic-Only / Data Pipeline Stories
+
+Stories that implement business logic, data processing, import/export, or background operations with no direct UI.
+
+**Required evidence:**
+- [ ] Automated tests covering the logic (unit + integration)
+- [ ] Raw command output from test run
+- [ ] Manual verification steps documented (e.g., "call function X with input Y, verify output Z")
+- [ ] If the logic is exposed via an API: curl request/response pairs or equivalent
+- [ ] If the logic is exposed via CLI: raw CLI output
+
+**Browser automation:** Only if the logic is triggered from the UI (e.g., an export button on a settings page).
+
+**Examples:**
+- Export/import logic: test output showing round-trip fidelity
+- Image processing pipeline: test output showing input size → output size, format verification
+- Sync engine: test output showing conflict resolution behavior
+- API handler: curl showing request → response, server logs showing processing
+
+### Browser Automation Tool
+
+Tier 2 stories require browser automation. Tier 1 and Tier 3 stories only require it when explicitly noted in their acceptance criteria.
+
+Prefer `agent-browser` as the default browser automation tool. If `agent-browser` is not available in the repo, use whatever browser automation tool is installed (Playwright, Puppeteer, Cypress, etc.) and document the choice in `progress.md`.
+
+**agent-browser setup notes:**
+- Install as a dev dependency: `npm install -D agent-browser && npx agent-browser install`
+- If Playwright's bundled browser isn't available, use system Chrome: `export AGENT_BROWSER_EXECUTABLE_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"`
+- Kill stale daemons: `pkill -f "agent-browser"` before switching executable paths
+- `agent-browser` has no `batch` subcommand — use shell scripts
+
+**Automation scripts** are executable shell scripts at `tasks/automation/{work-id}.sh`. They should:
+- Be idempotent (safe to re-run)
+- Check for a running dev server or start one
+- Save all artifacts to `artifacts/{work-id}/`
+- Exit non-zero on verification failure
+
+### Console / Error Log Verification
+
+For any story where the app runs in a browser:
+- Console must be checked for runtime errors (warnings are noted but not blocking)
+- Page errors must be empty
+- If unexplained errors exist, the story is not done
+
+---
+
+## Phase 5: Accept
+
+### Presenting Evidence
+
+After verification, present a structured summary:
+
+```
+## US-XXX: {Title} — Evidence
+
+### Acceptance Criteria
+| Criteria | Status | Evidence |
+|----------|--------|---------|
+| ... | PASS/FAIL | specific evidence |
+
+### Raw Command Output
+(test, lint, build output)
+
+### Browser Automation (if applicable)
+- Screenshot: artifacts/us-xxx/screenshot.png
+- Snapshot: (inline or path)
+- Console: clean / N warnings / N errors
+- Errors: clean / (list)
+
+### Deviations
+(any deviations from PRD, with justification)
+
+### Learnings
+(anything discovered during implementation)
+```
+
+### Acceptance Gate
+
+- **Wait for the user's explicit acceptance** before starting the next story.
+- If the user gives feedback, fix the issues, re-verify, and re-present.
+- Once accepted, update `progress.md` and move on.
+
+---
+
+## File Locations
+
+| Artifact | Path | Notes |
+|----------|------|-------|
+| Architecture PRD | `PRD.md` (repo root) | Greenfield projects only |
+| Task PRD | `tasks/prd-{feature}.md` | One per feature/phase |
+| Automation scripts | `tasks/automation/{work-id}.sh` | Executable shell scripts |
+| Verification artifacts | `artifacts/{work-id}/` | Screenshots, snapshots, logs |
+| Progress tracking | `progress.md` (repo root) | One flat file, collapsed after acceptance |
+
+### progress.md Format
+
+Each accepted story gets a full section during active work, then collapses to a one-liner after acceptance:
+
+```markdown
+# Progress
+
+## Completed
+- **US-001:** Project scaffold — accepted 2026-03-21
+- **US-002:** TinyBase store + IndexedDB — accepted 2026-03-22
+
+## US-003: PWA Shell — IN PROGRESS
+
+### Acceptance Criteria Evidence
+| Criteria | Status | Evidence |
+...
+
+### Learnings
+...
+
+### Deviations
+...
+```
+
+---
+
+## Resuming Work
+
+When `/ship` is invoked on a project that already has a PRD and progress file:
+
+1. Read `progress.md` to find the current state.
+2. Read the PRD to find the next unfinished story.
+3. Confirm with the user: "Looks like US-XXX is next. Ready to start?"
+4. Proceed with the build → verify → accept cycle.
+
+---
+
+## Checklist (Internal — Run Before Presenting Evidence)
+
+Use this before declaring ANY story done:
+
+- [ ] Re-read the story in the PRD
+- [ ] Confirm implementation matches exactly, or record deviation
+- [ ] Run all required project commands and save raw output
+- [ ] Check browser console for runtime errors (if applicable)
+- [ ] Check server/dev logs for warnings or failures
+- [ ] Perform manual verification steps
+- [ ] Run browser automation and save artifacts (if Tier 2)
+- [ ] Verify artifacts exist and are readable
+- [ ] Update `progress.md`
+- [ ] Do NOT move to next story until user accepts
